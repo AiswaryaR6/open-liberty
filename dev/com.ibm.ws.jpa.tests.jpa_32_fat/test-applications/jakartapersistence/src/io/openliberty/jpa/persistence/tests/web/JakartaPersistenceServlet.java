@@ -456,9 +456,9 @@ public class JakartaPersistenceServlet extends FATServlet {
         CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
         CriteriaQuery<Integer> criteriaQuery = criteriaBuilder.createQuery(Integer.class);
         Root<QueryDateTimeEntity> from = criteriaQuery.from(QueryDateTimeEntity.class);
-        jakarta.persistence.criteria.LocalTimeField<Integer> HOUR = jakarta.persistence.criteria.LocalTimeField.HOUR;
-        jakarta.persistence.criteria.Expression<Integer> hour = criteriaBuilder.extract(HOUR, from.get("localTimeData"));
-        criteriaQuery.select(hour);
+        jakarta.persistence.criteria.LocalTimeField<Integer> hourLocalTimeField = jakarta.persistence.criteria.LocalTimeField.HOUR;
+        jakarta.persistence.criteria.Expression<Integer> hourExpression = criteriaBuilder.extract(hourLocalTimeField, from.get("localTimeData"));
+        criteriaQuery.select(hourExpression);
         criteriaQuery.orderBy(criteriaBuilder.desc(from.get("name"), Nulls.FIRST));
         List<Integer> result = em.createQuery(criteriaQuery).getResultList();
 
@@ -493,9 +493,9 @@ public class JakartaPersistenceServlet extends FATServlet {
         CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
         CriteriaQuery<Integer> criteriaQuery = criteriaBuilder.createQuery(Integer.class);
         Root<QueryDateTimeEntity> from = criteriaQuery.from(QueryDateTimeEntity.class);
-        jakarta.persistence.criteria.LocalTimeField<Integer> MINUTE = jakarta.persistence.criteria.LocalTimeField.MINUTE;
-        jakarta.persistence.criteria.Expression<Integer> minute = criteriaBuilder.extract(MINUTE, from.get("localTimeData"));
-        criteriaQuery.select(minute);
+        jakarta.persistence.criteria.LocalTimeField<Integer> minuteLocalTimeField = jakarta.persistence.criteria.LocalTimeField.MINUTE;
+        jakarta.persistence.criteria.Expression<Integer> minuteExpression = criteriaBuilder.extract(minuteLocalTimeField, from.get("localTimeData"));
+        criteriaQuery.select(minuteExpression);
         criteriaQuery.orderBy(criteriaBuilder.desc(from.get("name"), Nulls.FIRST));
         List<Integer> result = em.createQuery(criteriaQuery).getResultList();
         assertEquals(4, result.size());
@@ -503,6 +503,41 @@ public class JakartaPersistenceServlet extends FATServlet {
         assertEquals(Integer.valueOf(30), result.get(1));
         assertEquals(Integer.valueOf(59), result.get(2));
         assertEquals(Integer.valueOf(0), result.get(3));
+    }
+
+    /**
+     * Jakarta Persistence 3.2 adds extract() to CriteriaBuilder
+     * this test extract The second of the minute, numbered from 0 to 59, including a fractional part representing fractions of a second java.time.LocalTime
+     */
+    @Test
+    public void testExtractSecondFromLocalTime() throws Exception {
+        deleteAllEntities(QueryDateTimeEntity.class);
+        QueryDateTimeEntity q1 = new QueryDateTimeEntity(1, "q1", LocalDate.of(2022, 06, 07), LocalTime.of(12, 0), LocalDateTime.of(2022, 06, 07, 12, 0));
+        QueryDateTimeEntity q2 = new QueryDateTimeEntity(2, "q2", LocalDate.of(2020, 12, 31), LocalTime.of(00, 0), LocalDateTime.of(2020, 01, 01, 00, 0));
+        QueryDateTimeEntity q3 = new QueryDateTimeEntity(3, "q3", LocalDate.of(2021, 01, 01), LocalTime.of(00, 0), LocalDateTime.of(2120, 01, 01, 00, 0));
+        QueryDateTimeEntity q4 = new QueryDateTimeEntity(10000);
+
+        tx.begin();
+        em.persist(q1);
+        em.persist(q2);
+        em.persist(q3);
+        em.persist(q4);
+        tx.commit();
+
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        CriteriaQuery<Double> criteriaQuery = criteriaBuilder.createQuery(Double.class);
+        Root<QueryDateTimeEntity> from = criteriaQuery.from(QueryDateTimeEntity.class);
+        jakarta.persistence.criteria.LocalTimeField<Double> secondLocalTimeField = jakarta.persistence.criteria.LocalTimeField.SECOND;
+        jakarta.persistence.criteria.Expression<Double> secondExpression = criteriaBuilder.extract(secondLocalTimeField, from.get("localTimeData"));
+        criteriaQuery.select(secondExpression);
+        criteriaQuery.orderBy(criteriaBuilder.desc(from.get("name"), Nulls.FIRST));
+        List<Double> result = em.createQuery(criteriaQuery).getResultList();
+        assertEquals(4, result.size());
+        assertEquals(null, result.get(0));
+        assertEquals(Double.valueOf(0), result.get(1));
+        assertEquals(Double.valueOf(0), result.get(2));
+        assertEquals(Double.valueOf(0), result.get(3));
+
     }
 
     /**
