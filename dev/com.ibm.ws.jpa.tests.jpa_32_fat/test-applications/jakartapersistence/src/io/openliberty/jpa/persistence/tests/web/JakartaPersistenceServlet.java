@@ -358,9 +358,9 @@ public class JakartaPersistenceServlet extends FATServlet {
         List<Integer> result = em.createQuery(criteriaQuery).getResultList();
         assertEquals(4, result.size());
         assertEquals(null, result.get(0));
-        assertEquals("Extracted Year should be 2021", Integer.valueOf(1), result.get(1));
-        assertEquals("Extracted Year should be 2020", Integer.valueOf(4), result.get(2));
-        assertEquals("Extracted Year should be 2022", Integer.valueOf(2), result.get(3));
+        assertEquals("Extracted Quarter should be 1", Integer.valueOf(1), result.get(1));
+        assertEquals("Extracted Quarter should be 4", Integer.valueOf(4), result.get(2));
+        assertEquals("Extracted Quarter should be 2", Integer.valueOf(2), result.get(3));
 
     }
 
@@ -393,9 +393,9 @@ public class JakartaPersistenceServlet extends FATServlet {
         List<Integer> result = em.createQuery(criteriaQuery).getResultList();
         assertEquals(4, result.size());
         assertEquals(null, result.get(0));
-        assertEquals("Extracted Year should be 2021", Integer.valueOf(1), result.get(1));
-        assertEquals("Extracted Year should be 2020", Integer.valueOf(12), result.get(2));
-        assertEquals("Extracted Year should be 2022", Integer.valueOf(6), result.get(3));
+        assertEquals("Extracted Month should be 1", Integer.valueOf(1), result.get(1));
+        assertEquals("Extracted Month should be 12", Integer.valueOf(12), result.get(2));
+        assertEquals("Extracted Month should be 6", Integer.valueOf(6), result.get(3));
 
     }
 
@@ -428,10 +428,45 @@ public class JakartaPersistenceServlet extends FATServlet {
         List<Integer> result = em.createQuery(criteriaQuery).getResultList();
         assertEquals(4, result.size());
         assertEquals(null, result.get(0));
-        assertEquals("Extracted Year should be 2021", Integer.valueOf(1), result.get(1));
-        assertEquals("Extracted Year should be 2020", Integer.valueOf(31), result.get(2));
-        assertEquals("Extracted Year should be 2022", Integer.valueOf(7), result.get(3));
+        assertEquals("Extracted day should be 1", Integer.valueOf(1), result.get(1));
+        assertEquals("Extracted day should be 31", Integer.valueOf(31), result.get(2));
+        assertEquals("Extracted day should be 7", Integer.valueOf(7), result.get(3));
 
+    }
+
+    /**
+     * Jakarta Persistence 3.2 adds extract() to CriteriaBuilder
+     * this test extract ISO-8601 week number java.time.LocalDate
+     */
+    @Test
+    public void testExtractWeekFromLocalData() throws Exception {
+        deleteAllEntities(QueryDateTimeEntity.class);
+        QueryDateTimeEntity q1 = new QueryDateTimeEntity(1, "q1", LocalDate.of(2022, 06, 07), LocalTime.of(12, 0), LocalDateTime.of(2022, 06, 07, 12, 0));
+        QueryDateTimeEntity q2 = new QueryDateTimeEntity(2, "q2", LocalDate.of(2020, 12, 31), LocalTime.of(01, 59), LocalDateTime.of(2020, 12, 31, 01, 59));
+        QueryDateTimeEntity q3 = new QueryDateTimeEntity(3, "q3", LocalDate.of(2021, 01, 01), LocalTime.of(00, 30), LocalDateTime.of(2021, 01, 01, 00, 30));
+        QueryDateTimeEntity q4 = new QueryDateTimeEntity(10000);
+
+        tx.begin();
+        em.persist(q1);
+        em.persist(q2);
+        em.persist(q3);
+        em.persist(q4);
+        tx.commit();
+
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        CriteriaQuery<Number> criteriaQuery = criteriaBuilder.createQuery(Number.class);
+        Root<QueryDateTimeEntity> from = criteriaQuery.from(QueryDateTimeEntity.class);
+        jakarta.persistence.criteria.LocalDateField<Integer> weekLocalDateField = jakarta.persistence.criteria.LocalDateField.WEEK;
+        jakarta.persistence.criteria.Expression<Integer> weekExpression = criteriaBuilder.extract(weekLocalDateField, from.get("localDateData"));
+        criteriaQuery.select(weekExpression);
+        criteriaQuery.orderBy(criteriaBuilder.desc(from.get("name"), Nulls.FIRST));
+        List<Number> result = em.createQuery(criteriaQuery).getResultList();
+        assertEquals(4, result.size());
+        System.out.println("***** testExtractWeekFromLocalData **** results: " + result);
+        assertEquals(null, result.get(0));
+        assertEquals("Extracted Week should be 0", Long.valueOf(0), Long.valueOf(result.get(1).longValue()));
+        assertEquals("Extracted Week should be 53", Long.valueOf(53), Long.valueOf(result.get(2).longValue()));
+        assertEquals("Extracted week should be 23", Long.valueOf(23), Long.valueOf(result.get(3).longValue()));
     }
 
     /**
