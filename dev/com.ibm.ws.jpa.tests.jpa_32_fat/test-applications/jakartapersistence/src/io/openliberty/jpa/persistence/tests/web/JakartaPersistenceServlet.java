@@ -296,7 +296,7 @@ public class JakartaPersistenceServlet extends FATServlet {
 
     /**
      * Jakarta Persistence 3.2 adds extract() to CriteriaBuilder
-     * this test extract the calendar year from java.time.LocalDate
+     * this test extract the calendar YEAR from java.time.LocalDate
      */
     @Test
     public void testExtractYearFromLocalData() throws Exception {
@@ -316,9 +316,9 @@ public class JakartaPersistenceServlet extends FATServlet {
         CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
         CriteriaQuery<Integer> criteriaQuery = criteriaBuilder.createQuery(Integer.class);
         Root<QueryDateTimeEntity> from = criteriaQuery.from(QueryDateTimeEntity.class);
-        jakarta.persistence.criteria.LocalDateField<Integer> YEAR = jakarta.persistence.criteria.LocalDateField.YEAR;
-        jakarta.persistence.criteria.Expression<Integer> year = criteriaBuilder.extract(YEAR, from.get("localDateData"));
-        criteriaQuery.select(year);
+        jakarta.persistence.criteria.LocalDateField<Integer> yearLocalDateField = jakarta.persistence.criteria.LocalDateField.YEAR;
+        jakarta.persistence.criteria.Expression<Integer> yearExpression = criteriaBuilder.extract(yearLocalDateField, from.get("localDateData"));
+        criteriaQuery.select(yearExpression);
         criteriaQuery.orderBy(criteriaBuilder.desc(from.get("name"), Nulls.FIRST));
         List<Integer> result = em.createQuery(criteriaQuery).getResultList();
         assertEquals(4, result.size());
@@ -351,9 +351,9 @@ public class JakartaPersistenceServlet extends FATServlet {
         CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
         CriteriaQuery<Integer> criteriaQuery = criteriaBuilder.createQuery(Integer.class);
         Root<QueryDateTimeEntity> from = criteriaQuery.from(QueryDateTimeEntity.class);
-        jakarta.persistence.criteria.LocalDateField<Integer> QUARTER = jakarta.persistence.criteria.LocalDateField.QUARTER;
-        jakarta.persistence.criteria.Expression<Integer> quarter = criteriaBuilder.extract(QUARTER, from.get("localDateData"));
-        criteriaQuery.select(quarter);
+        jakarta.persistence.criteria.LocalDateField<Integer> quarterLocalDateField = jakarta.persistence.criteria.LocalDateField.QUARTER;
+        jakarta.persistence.criteria.Expression<Integer> quarterExpression = criteriaBuilder.extract(quarterLocalDateField, from.get("localDateData"));
+        criteriaQuery.select(quarterExpression);
         criteriaQuery.orderBy(criteriaBuilder.desc(from.get("name"), Nulls.FIRST));
         List<Integer> result = em.createQuery(criteriaQuery).getResultList();
         assertEquals(4, result.size());
@@ -361,6 +361,76 @@ public class JakartaPersistenceServlet extends FATServlet {
         assertEquals("Extracted Year should be 2021", Integer.valueOf(1), result.get(1));
         assertEquals("Extracted Year should be 2020", Integer.valueOf(4), result.get(2));
         assertEquals("Extracted Year should be 2022", Integer.valueOf(2), result.get(3));
+
+    }
+
+    /**
+     * Jakarta Persistence 3.2 adds extract() to CriteriaBuilder
+     * this test extract the MONTH of the year numbered from 1 from java.time.LocalDate
+     */
+    @Test
+    public void testExtractMonthFromLocalData() throws Exception {
+        deleteAllEntities(QueryDateTimeEntity.class);
+        QueryDateTimeEntity q1 = new QueryDateTimeEntity(1, "q1", LocalDate.of(2022, 06, 07), LocalTime.of(12, 0), LocalDateTime.of(2022, 06, 07, 12, 0));
+        QueryDateTimeEntity q2 = new QueryDateTimeEntity(2, "q2", LocalDate.of(2020, 12, 31), LocalTime.of(01, 59), LocalDateTime.of(2020, 12, 31, 01, 59));
+        QueryDateTimeEntity q3 = new QueryDateTimeEntity(3, "q3", LocalDate.of(2021, 01, 01), LocalTime.of(00, 30), LocalDateTime.of(2021, 01, 01, 00, 30));
+        QueryDateTimeEntity q4 = new QueryDateTimeEntity(10000);
+
+        tx.begin();
+        em.persist(q1);
+        em.persist(q2);
+        em.persist(q3);
+        em.persist(q4);
+        tx.commit();
+
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        CriteriaQuery<Integer> criteriaQuery = criteriaBuilder.createQuery(Integer.class);
+        Root<QueryDateTimeEntity> from = criteriaQuery.from(QueryDateTimeEntity.class);
+        jakarta.persistence.criteria.LocalDateField<Integer> monthLocalDateField = jakarta.persistence.criteria.LocalDateField.MONTH;
+        jakarta.persistence.criteria.Expression<Integer> monthExpression = criteriaBuilder.extract(monthLocalDateField, from.get("localDateData"));
+        criteriaQuery.select(monthExpression);
+        criteriaQuery.orderBy(criteriaBuilder.desc(from.get("name"), Nulls.FIRST));
+        List<Integer> result = em.createQuery(criteriaQuery).getResultList();
+        assertEquals(4, result.size());
+        assertEquals(null, result.get(0));
+        assertEquals("Extracted Year should be 2021", Integer.valueOf(1), result.get(1));
+        assertEquals("Extracted Year should be 2020", Integer.valueOf(12), result.get(2));
+        assertEquals("Extracted Year should be 2022", Integer.valueOf(6), result.get(3));
+
+    }
+
+    /**
+     * Jakarta Persistence 3.2 adds extract() to CriteriaBuilder
+     * this test extract the DAY of the year numbered from 1 from java.time.LocalDate
+     */
+    @Test
+    public void testExtractDayFromLocalData() throws Exception {
+        deleteAllEntities(QueryDateTimeEntity.class);
+        QueryDateTimeEntity q1 = new QueryDateTimeEntity(1, "q1", LocalDate.of(2022, 06, 07), LocalTime.of(12, 0), LocalDateTime.of(2022, 06, 07, 12, 0));
+        QueryDateTimeEntity q2 = new QueryDateTimeEntity(2, "q2", LocalDate.of(2020, 12, 31), LocalTime.of(01, 59), LocalDateTime.of(2020, 12, 31, 01, 59));
+        QueryDateTimeEntity q3 = new QueryDateTimeEntity(3, "q3", LocalDate.of(2021, 01, 01), LocalTime.of(00, 30), LocalDateTime.of(2021, 01, 01, 00, 30));
+        QueryDateTimeEntity q4 = new QueryDateTimeEntity(10000);
+
+        tx.begin();
+        em.persist(q1);
+        em.persist(q2);
+        em.persist(q3);
+        em.persist(q4);
+        tx.commit();
+
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        CriteriaQuery<Integer> criteriaQuery = criteriaBuilder.createQuery(Integer.class);
+        Root<QueryDateTimeEntity> from = criteriaQuery.from(QueryDateTimeEntity.class);
+        jakarta.persistence.criteria.LocalDateField<Integer> dayLocalDateField = jakarta.persistence.criteria.LocalDateField.DAY;
+        jakarta.persistence.criteria.Expression<Integer> dayExpression = criteriaBuilder.extract(dayLocalDateField, from.get("localDateData"));
+        criteriaQuery.select(dayExpression);
+        criteriaQuery.orderBy(criteriaBuilder.desc(from.get("name"), Nulls.FIRST));
+        List<Integer> result = em.createQuery(criteriaQuery).getResultList();
+        assertEquals(4, result.size());
+        assertEquals(null, result.get(0));
+        assertEquals("Extracted Year should be 2021", Integer.valueOf(1), result.get(1));
+        assertEquals("Extracted Year should be 2020", Integer.valueOf(31), result.get(2));
+        assertEquals("Extracted Year should be 2022", Integer.valueOf(7), result.get(3));
 
     }
 
