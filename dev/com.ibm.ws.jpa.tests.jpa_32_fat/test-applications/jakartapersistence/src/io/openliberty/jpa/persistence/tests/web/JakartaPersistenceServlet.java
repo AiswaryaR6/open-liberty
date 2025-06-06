@@ -435,6 +435,43 @@ public class JakartaPersistenceServlet extends FATServlet {
     }
 
     /**
+     * Jakarta Persistence 3.2 adds extract() to CriteriaBuilder
+     * this test extract the The hour of the day in 24-hour time, numbered from 0 to 23 from java.time.LocalTime
+     */
+    @Test
+    public void testExtractHourFromLocalTime() throws Exception {
+        deleteAllEntities(QueryDateTimeEntity.class);
+        QueryDateTimeEntity q1 = new QueryDateTimeEntity(1, "q1", LocalDate.of(2022, 06, 07), LocalTime.of(12, 0), LocalDateTime.of(2022, 06, 07, 12, 0));
+        QueryDateTimeEntity q2 = new QueryDateTimeEntity(2, "q2", LocalDate.of(2020, 12, 31), LocalTime.of(01, 59), LocalDateTime.of(2020, 12, 31, 01, 59));
+        QueryDateTimeEntity q3 = new QueryDateTimeEntity(3, "q3", LocalDate.of(2021, 01, 01), LocalTime.of(00, 30), LocalDateTime.of(2021, 01, 01, 00, 30));
+        QueryDateTimeEntity q4 = new QueryDateTimeEntity(10000);
+
+        tx.begin();
+        em.persist(q1);
+        em.persist(q2);
+        em.persist(q3);
+        em.persist(q4);
+        tx.commit();
+
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        CriteriaQuery<Integer> criteriaQuery = criteriaBuilder.createQuery(Integer.class);
+        Root<QueryDateTimeEntity> from = criteriaQuery.from(QueryDateTimeEntity.class);
+        jakarta.persistence.criteria.LocalTimeField<Integer> HOUR = jakarta.persistence.criteria.LocalTimeField.HOUR;
+        jakarta.persistence.criteria.Expression<Integer> hour = criteriaBuilder.extract(HOUR, from.get("localTimeData"));
+        criteriaQuery.select(hour);
+        criteriaQuery.orderBy(criteriaBuilder.desc(from.get("name"), Nulls.FIRST));
+        List<Integer> result = em.createQuery(criteriaQuery).getResultList();
+
+        System.out.println("******** testExtractHourFromLocalTime *******" + result);
+        assertEquals(4, result.size());
+        assertEquals(null, result.get(0));
+        assertEquals(Integer.valueOf(0), result.get(1));
+        assertEquals(Integer.valueOf(1), result.get(2));
+        assertEquals(Integer.valueOf(12), result.get(3));
+
+    }
+
+    /**
      * Utility method to drop all entities from table.
      *
      * Order to tests is not guaranteed and thus we should be pessimistic and
