@@ -611,6 +611,41 @@ public class JakartaPersistenceServlet extends FATServlet {
     }
 
     /**
+     * Jakarta Persistence 3.2 adds extract() to CriteriaBuilder
+     * this test extract the QUARTER of the year numbered from 1 to 4 from java.time.LocalDateTime
+     */
+    @Test
+    public void testExtractQuarterFromLocalDateTime() throws Exception {
+        deleteAllEntities(QueryDateTimeEntity.class);
+        QueryDateTimeEntity q1 = new QueryDateTimeEntity(1, "q1", LocalDate.of(2022, 06, 07), LocalTime.of(12, 0), LocalDateTime.of(2022, 06, 07, 12, 0));
+        QueryDateTimeEntity q2 = new QueryDateTimeEntity(2, "q2", LocalDate.of(2020, 12, 31), LocalTime.of(01, 59), LocalDateTime.of(2020, 12, 31, 01, 59));
+        QueryDateTimeEntity q3 = new QueryDateTimeEntity(3, "q3", LocalDate.of(2021, 01, 01), LocalTime.of(00, 30), LocalDateTime.of(2021, 01, 01, 00, 30));
+        QueryDateTimeEntity q4 = new QueryDateTimeEntity(10000);
+
+        tx.begin();
+        em.persist(q1);
+        em.persist(q2);
+        em.persist(q3);
+        em.persist(q4);
+        tx.commit();
+
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        CriteriaQuery<Integer> criteriaQuery = criteriaBuilder.createQuery(Integer.class);
+        Root<QueryDateTimeEntity> from = criteriaQuery.from(QueryDateTimeEntity.class);
+        jakarta.persistence.criteria.LocalDateTimeField<Integer> quarterLocalDateField = jakarta.persistence.criteria.LocalDateTimeField.QUARTER;
+        jakarta.persistence.criteria.Expression<Integer> quarterExpression = criteriaBuilder.extract(quarterLocalDateField, from.get("localDateTimeData"));
+        criteriaQuery.select(quarterExpression);
+        criteriaQuery.orderBy(criteriaBuilder.desc(from.get("name"), Nulls.FIRST));
+        List<Integer> result = em.createQuery(criteriaQuery).getResultList();
+        assertEquals(4, result.size());
+        assertEquals(null, result.get(0));
+        assertEquals("Extracted Quarter should be 1", Integer.valueOf(1), result.get(1));
+        assertEquals("Extracted Quarter should be 4", Integer.valueOf(4), result.get(2));
+        assertEquals("Extracted Quarter should be 2", Integer.valueOf(2), result.get(3));
+
+    }
+
+    /**
      * Utility method to drop all entities from table.
      *
      * Order to tests is not guaranteed and thus we should be pessimistic and
