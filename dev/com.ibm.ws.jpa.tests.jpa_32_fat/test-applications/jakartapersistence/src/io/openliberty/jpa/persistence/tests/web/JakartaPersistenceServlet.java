@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import componenttest.app.FATServlet;
@@ -741,7 +742,9 @@ public class JakartaPersistenceServlet extends FATServlet {
 
     /**
      * Jakarta Persistence 3.2 adds extract() to CriteriaBuilder
-     * this test extract ISO-8601 week number java.time.LocalDateTime
+     * this test extract ISO-8601 week number from java.time.LocalDateTime
+     *
+     * @throws Exception
      */
     @Test
     public void testExtractWeekFromLocalDateTime() throws Exception {
@@ -772,6 +775,82 @@ public class JakartaPersistenceServlet extends FATServlet {
         assertEquals("Extracted Week should be 0", Long.valueOf(0), Long.valueOf(result.get(1).longValue()));
         assertEquals("Extracted Week should be 53", Long.valueOf(53), Long.valueOf(result.get(2).longValue()));
         assertEquals("Extracted week should be 23", Long.valueOf(23), Long.valueOf(result.get(3).longValue()));
+    }
+
+    /**
+     * Jakarta Persistence 3.2 adds extract() to CriteriaBuilder
+     * Extracts LocalTime part of a DateTime
+     *
+     * @throws Exception
+     */
+    @Ignore("Throws exceptions with message 'Unknown EXTRACT function datetime_field: TIME'")
+    @Test
+    public void testExtractTimeFromLocalDateTime() throws Exception {
+        deleteAllEntities(QueryDateTimeEntity.class);
+        QueryDateTimeEntity q1 = new QueryDateTimeEntity(1, "q1", LocalDate.of(2022, 06, 07), LocalTime.of(12, 0), LocalDateTime.of(2022, 06, 07, 12, 0));
+        QueryDateTimeEntity q2 = new QueryDateTimeEntity(2, "q2", LocalDate.of(2020, 12, 31), LocalTime.of(01, 59), LocalDateTime.of(2020, 12, 31, 01, 59));
+        QueryDateTimeEntity q3 = new QueryDateTimeEntity(3, "q3", LocalDate.of(2021, 01, 01), LocalTime.of(00, 30), LocalDateTime.of(2021, 01, 01, 00, 30));
+        QueryDateTimeEntity q4 = new QueryDateTimeEntity(10000);
+
+        tx.begin();
+        em.persist(q1);
+        em.persist(q2);
+        em.persist(q3);
+        em.persist(q4);
+        tx.commit();
+
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        CriteriaQuery<LocalTime> criteriaQuery = criteriaBuilder.createQuery(LocalTime.class);
+        Root<QueryDateTimeEntity> from = criteriaQuery.from(QueryDateTimeEntity.class);
+        jakarta.persistence.criteria.LocalDateTimeField<LocalTime> dateLocalDateField = jakarta.persistence.criteria.LocalDateTimeField.TIME;
+        jakarta.persistence.criteria.Expression<LocalTime> dateExpression = criteriaBuilder.extract(dateLocalDateField, from.get("localDateTimeData"));
+        criteriaQuery.select(dateExpression);
+        criteriaQuery.orderBy(criteriaBuilder.desc(from.get("name"), Nulls.FIRST));
+        List<LocalTime> result = em.createQuery(criteriaQuery).getResultList();
+        assertEquals(4, result.size());
+        System.out.println("***** testExtractWeekFromLocalData **** results: " + result);
+        assertEquals(null, result.get(0));
+        assertEquals(LocalTime.of(00, 30), result.get(1));
+        assertEquals(LocalTime.of(01, 59), result.get(2));
+        assertEquals(LocalTime.of(12, 0), result.get(3));
+    }
+
+    /**
+     * Jakarta Persistence 3.2 adds extract() to CriteriaBuilder
+     * Extracts LocalDate part of a DateTime
+     *
+     * @throws Exception
+     */
+    @Ignore("Throws exceptions with message 'Unknown EXTRACT function datetime_field: DATE'")
+    @Test
+    public void testExtractDateFromLocalDateTime() throws Exception {
+        deleteAllEntities(QueryDateTimeEntity.class);
+        QueryDateTimeEntity q1 = new QueryDateTimeEntity(1, "q1", LocalDate.of(2022, 06, 07), LocalTime.of(12, 0), LocalDateTime.of(2022, 06, 07, 12, 0));
+        QueryDateTimeEntity q2 = new QueryDateTimeEntity(2, "q2", LocalDate.of(2020, 12, 31), LocalTime.of(01, 59), LocalDateTime.of(2020, 12, 31, 01, 59));
+        QueryDateTimeEntity q3 = new QueryDateTimeEntity(3, "q3", LocalDate.of(2021, 01, 01), LocalTime.of(00, 30), LocalDateTime.of(2021, 01, 01, 00, 30));
+        QueryDateTimeEntity q4 = new QueryDateTimeEntity(10000);
+
+        tx.begin();
+        em.persist(q1);
+        em.persist(q2);
+        em.persist(q3);
+        em.persist(q4);
+        tx.commit();
+
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        CriteriaQuery<LocalDate> criteriaQuery = criteriaBuilder.createQuery(LocalDate.class);
+        Root<QueryDateTimeEntity> from = criteriaQuery.from(QueryDateTimeEntity.class);
+        jakarta.persistence.criteria.LocalDateTimeField<LocalDate> dateLocalDateField = jakarta.persistence.criteria.LocalDateTimeField.DATE;
+        jakarta.persistence.criteria.Expression<LocalDate> dateExpression = criteriaBuilder.extract(dateLocalDateField, from.get("localDateTimeData"));
+        criteriaQuery.select(dateExpression);
+        criteriaQuery.orderBy(criteriaBuilder.desc(from.get("name"), Nulls.FIRST));
+        List<LocalDate> result = em.createQuery(criteriaQuery).getResultList();
+        assertEquals(4, result.size());
+        System.out.println("***** testExtractWeekFromLocalData **** results: " + result);
+        assertEquals(null, result.get(0));
+        assertEquals(LocalDate.of(2021, 01, 01), result.get(1));
+        assertEquals(LocalDate.of(2020, 12, 31), result.get(2));
+        assertEquals(LocalDate.of(2022, 06, 07), result.get(3));
     }
 
     /**
