@@ -740,6 +740,41 @@ public class JakartaPersistenceServlet extends FATServlet {
     }
 
     /**
+     * Jakarta Persistence 3.2 adds extract() to CriteriaBuilder
+     * this test extract ISO-8601 week number java.time.LocalDateTime
+     */
+    @Test
+    public void testExtractWeekFromLocalDateTime() throws Exception {
+        deleteAllEntities(QueryDateTimeEntity.class);
+        QueryDateTimeEntity q1 = new QueryDateTimeEntity(1, "q1", LocalDate.of(2022, 06, 07), LocalTime.of(12, 0), LocalDateTime.of(2022, 06, 07, 12, 0));
+        QueryDateTimeEntity q2 = new QueryDateTimeEntity(2, "q2", LocalDate.of(2020, 12, 31), LocalTime.of(01, 59), LocalDateTime.of(2020, 12, 31, 01, 59));
+        QueryDateTimeEntity q3 = new QueryDateTimeEntity(3, "q3", LocalDate.of(2021, 01, 01), LocalTime.of(00, 30), LocalDateTime.of(2021, 01, 01, 00, 30));
+        QueryDateTimeEntity q4 = new QueryDateTimeEntity(10000);
+
+        tx.begin();
+        em.persist(q1);
+        em.persist(q2);
+        em.persist(q3);
+        em.persist(q4);
+        tx.commit();
+
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        CriteriaQuery<Number> criteriaQuery = criteriaBuilder.createQuery(Number.class);
+        Root<QueryDateTimeEntity> from = criteriaQuery.from(QueryDateTimeEntity.class);
+        jakarta.persistence.criteria.LocalDateTimeField<Integer> weekLocalDateField = jakarta.persistence.criteria.LocalDateTimeField.WEEK;
+        jakarta.persistence.criteria.Expression<Integer> weekExpression = criteriaBuilder.extract(weekLocalDateField, from.get("localDateTimeData"));
+        criteriaQuery.select(weekExpression);
+        criteriaQuery.orderBy(criteriaBuilder.desc(from.get("name"), Nulls.FIRST));
+        List<Number> result = em.createQuery(criteriaQuery).getResultList();
+        assertEquals(4, result.size());
+        System.out.println("***** testExtractWeekFromLocalData **** results: " + result);
+        assertEquals(null, result.get(0));
+        assertEquals("Extracted Week should be 0", Long.valueOf(0), Long.valueOf(result.get(1).longValue()));
+        assertEquals("Extracted Week should be 53", Long.valueOf(53), Long.valueOf(result.get(2).longValue()));
+        assertEquals("Extracted week should be 23", Long.valueOf(23), Long.valueOf(result.get(3).longValue()));
+    }
+
+    /**
      * Utility method to drop all entities from table.
      *
      * Order to tests is not guaranteed and thus we should be pessimistic and
