@@ -802,9 +802,9 @@ public class JakartaPersistenceServlet extends FATServlet {
         CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
         CriteriaQuery<LocalTime> criteriaQuery = criteriaBuilder.createQuery(LocalTime.class);
         Root<QueryDateTimeEntity> from = criteriaQuery.from(QueryDateTimeEntity.class);
-        jakarta.persistence.criteria.LocalDateTimeField<LocalTime> dateLocalDateField = jakarta.persistence.criteria.LocalDateTimeField.TIME;
-        jakarta.persistence.criteria.Expression<LocalTime> dateExpression = criteriaBuilder.extract(dateLocalDateField, from.get("localDateTimeData"));
-        criteriaQuery.select(dateExpression);
+        jakarta.persistence.criteria.LocalDateTimeField<LocalTime> timeLocalDateField = jakarta.persistence.criteria.LocalDateTimeField.TIME;
+        jakarta.persistence.criteria.Expression<LocalTime> timeExpression = criteriaBuilder.extract(timeLocalDateField, from.get("localDateTimeData"));
+        criteriaQuery.select(timeExpression);
         criteriaQuery.orderBy(criteriaBuilder.desc(from.get("name"), Nulls.FIRST));
         List<LocalTime> result = em.createQuery(criteriaQuery).getResultList();
         assertEquals(4, result.size());
